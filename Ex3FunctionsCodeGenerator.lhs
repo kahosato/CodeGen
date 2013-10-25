@@ -11,13 +11,17 @@ Fill in the gaps...
 
 Part (1): translate function declaration
 One can assume that the variable is at paramReg
+
 > transFunction :: Function -> [Instr]
+>
 > transFunction (Defun fname paramname body)
->  = [Define fname] ++ transExp body regs ++ [ret]
+>    = [Define fname] ++ transExp body regs ++ [ret]
 
 
 Part (2): saving registers
+
 > saveRegs :: [Register] -> [Instr]
+> 
 > saveRegs regsNotInUse
 >  = concatMap (push allRegs not in regsNotInUse )
 >       where
