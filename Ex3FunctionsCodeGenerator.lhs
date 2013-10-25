@@ -23,10 +23,9 @@ Part (2): saving registers
 > saveRegs :: [Register] -> [Instr]
 > 
 > saveRegs regsNotInUse
->  = concatMap (push allRegs not in regsNotInUse )
+>  = concatMap (push (filter (flip elem regsNotInUse) allRegs)) 
 >       where
 >            push reg = [Mov (Reg reg) Push]
-
 
 Part (3): translate expression (ie function body, perhaps including
 function calls)
