@@ -1,5 +1,6 @@
 > module Ex3FunctionsCodeGenerator where
 > import Ex3FunctionsTypes
+> import Data.List
 
 -----------------------------------------------------------
 Solution for Compilers exercise 3
@@ -15,18 +16,14 @@ One can assume that the variable is at paramReg
 > transFunction :: Function -> [Instr]
 >
 > transFunction (Defun fname paramname body)
->    = [Define fname] ++ transExp body regsNotParam  ++ [Ret]
->           where
->                regsNotParam = [D1,D2,D3,D4,D5,D6,D7]
+>    = [Define fname] ++ transExp body (allRegs \\ [paramReg]) ++ [Ret]
 
 Part (2): saving registers
 
 > saveRegs :: [Register] -> [Instr]
 > 
 > saveRegs regsNotInUse
->  = concatMap push (filter (flip notElem regsNotInUse) allRegs)
->       where
->            push reg = [Mov (Reg reg) Push]
+>  = [(Mov (Reg reg) Push) | reg <- (allRegs \\ regsNotInUse)]
 
 Part (3): translate expression (ie function body, perhaps including
 function calls)
@@ -38,7 +35,7 @@ function calls)
 > transExp (Apply s e) (dst:rest)
 >    = saveRegs (dst:rest) ++ transExp e (dst:rest) 
 >    ++ [Mov (Reg dst) (Reg paramReg)] ++ [Jsr s] ++ [Mov (Reg resultReg) (Reg dst)]
->    ++ restoreRegs(filter (flip notElem (dst:rest)) allRegs)
+>    ++ restoreRegs(allRegs \\ (dst:rest))
 >
 > transExp (Plus e1 e2) regs = transBiopExp 'p' e1 e2 regs 
 > transExp (Minus e1 e2) regs = transBiopExp 'm' e1 e2 regs 
@@ -74,7 +71,4 @@ function calls)
         
 > restoreRegs :: [Register] -> [Instr]
 > restoreRegs regsPushed
->       = concatMap pop (reverse regsPushed)
->           where 
->               pop reg = [Mov Pop (Reg reg)] 
-
+>       =[Mov Pop (Reg reg) | reg <- (reverse regsPushed)]
