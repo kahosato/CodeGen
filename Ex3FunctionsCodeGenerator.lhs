@@ -15,15 +15,16 @@ One can assume that the variable is at paramReg
 > transFunction :: Function -> [Instr]
 >
 > transFunction (Defun fname paramname body)
->    = [Define fname] ++ transExp body regs ++ [ret]
-
+>    = [Define fname] ++ transExp body regsNotParam  ++ [Ret]
+>           where
+>                regsNotParam = [D1,D2,D3,D4,D5,D6,D7]
 
 Part (2): saving registers
 
 > saveRegs :: [Register] -> [Instr]
 > 
 > saveRegs regsNotInUse
->  = concatMap (push (filter (flip elem regsNotInUse) allRegs)) 
+>  = concatMap push (filter (flip notElem regsNotInUse) allRegs)
 >       where
 >            push reg = [Mov (Reg reg) Push]
 
@@ -33,17 +34,18 @@ function calls)
 > transExp :: Exp -> [Register] -> [Instr]
 > 
 > transExp (Const x) (dst:rest) = [Mov (ImmNum x)(Reg dst)]
-> transExp (Var x) (dst:rest) = [Mov paramReg dst]
+> transExp (Var x) (dst:rest) = [Mov (Reg paramReg) (Reg dst)]
 > transExp (Apply s e) (dst:rest)
->    =  first ++ second
->        where 
->            second = transExp e (dst:rest) ++ [Mov dst paramReg] ++ [Jsr s]
->            first =
->            if not elem paramReg avail 
->            then saveRegs[paramReg]
->            else []
+>    = saveRegs (dst:rest) ++ transExp e (dst:rest) 
+>    ++ [Mov (Reg dst) (Reg paramReg)] ++ [Jsr s] ++ [Mov (Reg resultReg) (Reg dst)]
+>    ++ restoreRegs(filter (flip notElem (dst:rest)) allRegs)
+>
+> transExp (Plus e1 e2) regs = transBiopExp 'p' e1 e2 regs 
+> transExp (Minus e1 e2) regs = transBiopExp 'm' e1 e2 regs 
 
-> transExp (op e1 e2)(dst:next:rest)
+> transBiopExp :: Char -> Exp -> Exp -> [Register] -> [Instr]
+>
+> transBiopExp op e1 e2  (dst:next:rest)
 >   =if weight e1 > weight e2
 >   then
 >   transExp e1 (dst:next:rest) ++
@@ -53,23 +55,26 @@ function calls)
 >   transExp e2 (next:dst:rest) ++
 >   transExp e1 (dst:rest) ++
 >   transBiop op dst next
->      where 
->       transBiop Add r1 r2 = [Add r1 r2]
->       transBiop Sub r1 r2 = [Sub r1 r2]
+>       where 
+>           transBiop 'p' r1 r2 = [Add (Reg r1) (Reg r2)]
+>           transBiop 'm' r1 r2 = [Sub (Reg r2) (Reg r1)]
 
 > weight :: Exp -> Int
 > weight (Const x) = 1
 > weight (Var x) = 1
 > weight (Apply s e) = weight e 
-> weight (Biop e1 e2)
->    = min w1 w2
->       where 
->           w1 = max (weight e1) (weight e1) + 1
->           w2 = max (weight e1) + 1 (weight e)
+> weight (Plus e1 e2) = weightBiop e1 e2 
+> weight (Minus e1 e2) = weightBiop e1 e2
 
+> weightBiop :: Exp -> Exp -> Int 
+> weightBiop e1 e2 = min w1 w2
+>       where 
+>           w1 = max (weight e1) ((weight e2) + 1)
+>           w2 = max ((weight e1) + 1) (weight e2)
+        
 > restoreRegs :: [Register] -> [Instr]
 > restoreRegs regsPushed
->    = concatMap(pop (reverse regsPushed))
->       where 
->           pop reg = [Mov Pop (Reg reg)] 
+>       = concatMap pop (reverse regsPushed)
+>           where 
+>               pop reg = [Mov Pop (Reg reg)] 
 
