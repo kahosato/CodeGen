@@ -33,8 +33,7 @@ function calls)
 > transExp (Const x) (dst:rest) = [Mov (ImmNum x)(Reg dst)]
 > transExp (Var x) (dst:rest) = [Mov (Reg paramReg) (Reg dst)]
 > transExp (Apply s e) (dst:rest)
->    = saveRegs (dst:rest) ++ transExp e (dst:rest) 
->    ++ [Mov (Reg dst) (Reg paramReg)] ++ [Jsr s] ++ [Mov (Reg resultReg) (Reg dst)]
+>    = saveRegs (dst:rest) ++ transExp e allRegs ++ [Jsr s] ++ [Mov (Reg resultReg) (Reg dst)]
 >    ++ restoreRegs(allRegs \\ (dst:rest))
 >
 > transExp (Plus e1 e2) regs = transBiopExp 'p' e1 e2 regs 
@@ -59,7 +58,7 @@ function calls)
 > weight :: Exp -> Int
 > weight (Const x) = 1
 > weight (Var x) = 1
-> weight (Apply s e) = weight e 
+> weight (Apply s e) = numRegs + 1  
 > weight (Plus e1 e2) = weightBiop e1 e2 
 > weight (Minus e1 e2) = weightBiop e1 e2
 
