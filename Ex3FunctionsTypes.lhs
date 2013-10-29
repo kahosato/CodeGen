@@ -94,6 +94,7 @@ Feb 2006 Added "instance show Instr" thanks to Dave Ingram
 > resultReg = D1
 > allRegs = [D0, D1,D2,D3,D4,D5,D6,D7]
 > numRegs = 8
+
 Test examples:
 
 > test5 

@@ -58,7 +58,7 @@ function calls)
 > weight :: Exp -> Int
 > weight (Const x) = 1
 > weight (Var x) = 1
-> weight (Apply s e) = numRegs + 1  
+> weight (Apply s e) = length allRegs + 1  
 > weight (Plus e1 e2) = weightBiop e1 e2 
 > weight (Minus e1 e2) = weightBiop e1 e2
 
